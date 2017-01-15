@@ -7,12 +7,19 @@ import java.util.function.Consumer;
 
 /**
  * Demonstrate subscription.
+ *
+ * To list registered subscriptions:
+ *   > curl localhost:8000/me/subscriptions
+ *
+ * Create a new document:
+ *   > curl localhost:8000/me -X POST -H "content-type: application/json" -d "{}"
+ *
  */
 public class SubscriptionDemo {
 
     public static class MySubscriptionService extends StatefulService {
 
-        public static String FACTORY_LINK = "/me";
+        public static final String FACTORY_LINK = "/me";
 
         public static FactoryService createFactory() {
             return FactoryService.create(MySubscriptionService.class);
@@ -22,12 +29,6 @@ public class SubscriptionDemo {
             super(ServiceDocument.class);
         }
 
-        @Override
-        public void handleGet(Operation get) {
-            Operation op = Operation.createPost(getUri()).setBody("ABC");
-            ((UtilityService)getUtilityService("")).notifySubscribers(op);
-            super.handleGet(get);
-        }
     }
 
     public static class MySubscriptionHost extends ServiceHost {
@@ -39,7 +40,7 @@ public class SubscriptionDemo {
 
             // Start the root namespace factory: this will respond to the root URI (/) and list all
             // the factory services.
-            super.startService(new RootNamespaceService());
+            this.startService(new RootNamespaceService());
 
             this.startFactory(MySubscriptionService.class, MySubscriptionService::createFactory);
 
@@ -54,6 +55,7 @@ public class SubscriptionDemo {
                     .setReferer(this.getUri());
 
 
+            // start subscription when factory became available
             this.registerForServiceAvailability((o, e) -> {
                 this.startSubscriptionService(createSub, target);
 //                this.startReliableSubscriptionService(createSub, target);
@@ -65,11 +67,8 @@ public class SubscriptionDemo {
 
     public static void main(String[] args) throws Throwable {
         MySubscriptionHost host = new MySubscriptionHost();
+        Runtime.getRuntime().addShutdownHook(new Thread(host::stop));
         host.initialize(args);
         host.start();
-
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            host.stop();
-        }));
     }
 }
