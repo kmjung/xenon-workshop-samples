@@ -31,6 +31,8 @@
 
   <modules>
     <module>xenon-auth-sample</module>
+    <module>stateless</module>
+    <module>subscription</module>
   </modules>
 
 
