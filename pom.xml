@@ -30,9 +30,10 @@
   </build>
 
   <modules>
-    <module>xenon-auth-sample</module>
+    <module>query</module>
     <module>stateless</module>
     <module>subscription</module>
+    <module>xenon-auth-sample</module>
   </modules>
 
 
