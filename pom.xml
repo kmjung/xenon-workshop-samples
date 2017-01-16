@@ -33,9 +33,9 @@
     <module>query</module>
     <module>stateless</module>
     <module>subscription</module>
+    <module>task</module>
     <module>xenon-auth-sample</module>
   </modules>
-
 
   <dependencies>
     <dependency>
