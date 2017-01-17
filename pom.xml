@@ -35,6 +35,7 @@
     <module>subscription</module>
     <module>task</module>
     <module>xenon-auth-sample</module>
+    <module>stateful</module>
   </modules>
 
   <dependencies>
