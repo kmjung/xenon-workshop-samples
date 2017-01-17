@@ -33,11 +33,11 @@ public class DemoHost extends ServiceHost {
         this.startService(new RootNamespaceService());
 
         // Starting the simple-employee factory service.
-        SimpleEmployeeFactoryService factoryService = new SimpleEmployeeFactoryService();
+        EmployeeFactoryService factoryService = new EmployeeFactoryService();
         this.startService(factoryService);
 
-        // Starting the employee factory service.
-        this.startFactory(new EmployeeService());
+//        // Starting the employee factory service.
+//        this.startFactory(new EmployeeService());
 
         return this;
     }

@@ -5,11 +5,11 @@ import com.vmware.xenon.common.ServiceDocument;
 import com.vmware.xenon.common.StatefulService;
 
 public class EmployeeService extends StatefulService {
-    public static final String FACTORY_LINK = "/sample/employees";
+    // public static final String FACTORY_LINK = "/sample/employees";
 
     public static class Employee extends ServiceDocument {
         public String name;
-        public String managerLink;
+        public String managerName;
     }
 
     public EmployeeService() {
@@ -85,8 +85,8 @@ public class EmployeeService extends StatefulService {
             return;
         }
 
-        if (newState.managerLink != null) {
-            currentState.managerLink = newState.managerLink;
+        if (newState.managerName != null) {
+            currentState.managerName = newState.managerName;
         }
 
         patch.setBody(currentState);
