@@ -32,6 +32,11 @@ public class EmployeeService extends StatefulService {
     public void handleCreate(Operation startPost) {
         Employee s = getBody(startPost);
 
+        if (s == null) {
+            startPost.fail(new IllegalArgumentException("missing body"));
+            return;
+        }
+
         if (s.name == null || s.name.isEmpty()) {
             startPost.fail(new IllegalArgumentException("name cannot be null"));
             return;
@@ -56,6 +61,11 @@ public class EmployeeService extends StatefulService {
         Employee newState = getBody(put);
         Employee currentState = getState(put);
 
+        if (newState == null) {
+            put.fail(new IllegalArgumentException("missing body"));
+            return;
+        }
+
         if (newState.name == null) {
             put.fail(new IllegalArgumentException("employee name cannot be set to null"));
             return;
@@ -79,6 +89,11 @@ public class EmployeeService extends StatefulService {
     public void handlePatch(Operation patch) {
         Employee newState = getBody(patch);
         Employee currentState = getState(patch);
+
+        if (newState == null) {
+            patch.fail(new IllegalArgumentException("missing body"));
+            return;
+        }
 
         if (newState.name != null) {
             patch.fail(new IllegalArgumentException("employee name cannot be changed in a PATCH"));
