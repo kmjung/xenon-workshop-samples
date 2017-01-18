@@ -1,10 +1,19 @@
 package com.vmware.xenon.workshop;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
 import com.vmware.xenon.common.FactoryService;
 import com.vmware.xenon.common.Operation;
+import com.vmware.xenon.common.OperationJoin;
 import com.vmware.xenon.common.ServiceDocumentDescription.PropertyUsageOption;
 import com.vmware.xenon.common.ServiceHost;
 import com.vmware.xenon.common.TaskState;
+import com.vmware.xenon.common.Utils;
+import com.vmware.xenon.services.common.ExampleService;
+import com.vmware.xenon.services.common.QueryTask;
 import com.vmware.xenon.services.common.ServiceUriPaths;
 import com.vmware.xenon.services.common.TaskFactoryService;
 import com.vmware.xenon.services.common.TaskService;
@@ -18,7 +27,7 @@ public class DemoTaskService extends TaskService<DemoTaskService.DemoTaskState> 
     }
 
     public enum SubStage {
-        MOVE_TO_FINISHED
+        DO_STUFF
     }
 
     public static class DemoTaskState extends TaskService.TaskServiceState {
@@ -100,7 +109,7 @@ public class DemoTaskService extends TaskService<DemoTaskService.DemoTaskState> 
 
     private void initializePatchState(DemoTaskState taskState) {
         taskState.taskInfo.stage = TaskState.TaskStage.STARTED;
-        taskState.subStage = SubStage.MOVE_TO_FINISHED;
+        taskState.subStage = SubStage.DO_STUFF;
     }
 
     @Override
@@ -161,10 +170,74 @@ public class DemoTaskService extends TaskService<DemoTaskService.DemoTaskState> 
 
     private void processSubStage(DemoTaskState currentState) {
         switch (currentState.subStage) {
-        case MOVE_TO_FINISHED:
-            logInfo("Moving to FINISHED state");
-            sendSelfPatch(currentState, TaskState.TaskStage.FINISHED, null);
+        case DO_STUFF:
+            processDoStuffStage(currentState);
             break;
         }
+    }
+
+    private void processDoStuffStage(DemoTaskState currentState) {
+
+        QueryTask.Query query = QueryTask.Query.Builder.create()
+                .addKindFieldClause(ExampleService.ExampleServiceState.class)
+                .build();
+
+        QueryTask queryTask = QueryTask.Builder.createDirectTask()
+                .setQuery(query)
+                .build();
+
+        Operation queryPostOp = Operation
+                .createPost(this, ServiceUriPaths.CORE_QUERY_TASKS)
+                .setBody(queryTask)
+                .setCompletion((Operation op, Throwable ex) -> {
+                    if (ex != null) {
+                        failTask(currentState, ex);
+                        return;
+                    }
+
+                    QueryTask queryResult = op.getBody(QueryTask.class);
+                    processQueryResults(currentState, queryResult);
+                });
+
+        sendRequest(queryPostOp);
+    }
+
+    private void processQueryResults(DemoTaskState currentState, QueryTask queryResult) {
+
+        // If there are no query results, then there's nothing to do.
+        if (queryResult.results.documentLinks.isEmpty()) {
+            logInfo("Found no results of type ExampleService");
+            sendSelfFinishedPatch(currentState);
+            return;
+        }
+
+        // Create one delete Operation per document to delete
+        List<Operation> deleteOps = new ArrayList<>();
+        for (String documentLink : queryResult.results.documentLinks) {
+            Operation deleteOp = Operation.createDelete(this, documentLink);
+            deleteOps.add(deleteOp);
+        }
+
+        // Send the delete operations using an OperationJoin
+        OperationJoin
+                .create(deleteOps)
+                .setCompletion((Map<Long, Operation> ops, Map<Long, Throwable> exs) -> {
+                    if (exs != null && !exs.isEmpty()) {
+                        failTask(currentState, exs.values());
+                        return;
+                    }
+
+                    logInfo("Deleted %d ExampleService instances", ops.size());
+                    sendSelfFinishedPatch(currentState);
+                })
+                .sendWith(this);
+    }
+
+    private void failTask(DemoTaskState currentState, Collection<Throwable> exs) {
+        failTask(currentState, exs.iterator().next());
+    }
+
+    private void failTask(DemoTaskState currentState, Throwable e) {
+        sendSelfFailurePatch(currentState, Utils.toString(e));
     }
 }
