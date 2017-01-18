@@ -8,13 +8,13 @@ import java.nio.file.Paths;
 public class DemoHost extends ServiceHost {
 
     public static void main(String[] stringArgs) throws Throwable {
-        ServiceHost.Arguments defaultArgs = new ServiceHost.Arguments();
-        defaultArgs.sandbox = Paths.get("/tmp/xenondb");
+        Arguments defaultArgs = new Arguments();
+        defaultArgs.sandbox = Paths.get("/tmp/multinode/xenondb");
 
         startHost(stringArgs, defaultArgs);
     }
 
-    static void startHost(String[] stringArgs, ServiceHost.Arguments defaultArgs) throws Throwable {
+    static void startHost(String[] stringArgs, Arguments defaultArgs) throws Throwable {
         DemoHost host = new DemoHost();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             host.stop();
@@ -33,11 +33,7 @@ public class DemoHost extends ServiceHost {
         this.startService(new RootNamespaceService());
 
         // Starting the employee factory service.
-        EmployeeFactoryService factoryService = new EmployeeFactoryService();
-        this.startService(factoryService);
-
-//        // Starting the employee factory service.
-//        this.startFactory(new EmployeeService());
+        this.startFactory(new EmployeeService());
 
         return this;
     }

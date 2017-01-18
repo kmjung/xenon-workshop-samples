@@ -36,6 +36,7 @@
     <module>task</module>
     <module>xenon-auth-sample</module>
     <module>stateful</module>
+    <module>multinode</module>
   </modules>
 
   <dependencies>
